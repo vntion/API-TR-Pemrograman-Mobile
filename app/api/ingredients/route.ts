@@ -210,6 +210,19 @@ export async function GET(request: NextRequest) {
  *                   example: false
  */
 export async function POST(request: NextRequest) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json(
+      {
+        message:
+          'Header content type tidak didukung. Harap menggunakan content type multipart/form-data',
+        success: false,
+      },
+      { status: 415 },
+    );
+  }
+
   try {
     const authHeader = request.headers.get('authorization');
     const token = authHeader!.split(' ')[1];

@@ -339,6 +339,19 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json(
+      {
+        message:
+          'Header content type tidak didukung. Harap menggunakan content type multipart/form-data',
+        success: false,
+      },
+      { status: 415 },
+    );
+  }
+
   const authHeader = request.headers.get('authorization');
   const id = Number(params.id);
 

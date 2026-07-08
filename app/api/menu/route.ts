@@ -203,95 +203,101 @@ export async function GET(request: NextRequest) {
  *                   example: false
  */
 export async function POST(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader!.split(' ')[1];
+  const contentType = request.headers.get('content-type') || '';
 
-    const { data: session } = await supabaseClient()
-      .from('session_tokens')
-      .select('users(role)')
-      .eq('token', token)
-      .single();
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json(
+      {
+        message:
+          'Header content type tidak didukung. Harap menggunakan content type multipart/form-data',
+        success: false,
+      },
+      { status: 415 },
+    );
+  }
 
-    if (session?.users?.role !== 'manager') {
-      return NextResponse.json(
-        { message: 'Unauthorized', success: false },
-        { status: 401 },
-      );
-    }
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader!.split(' ')[1];
 
-    const formData = await request.formData();
-    const name = formData.get('nama') as string;
-    const description = formData.get('dekripsi') as string;
-    const price = formData.get('harga') as string;
-    const category_id = formData.get('kategori_id') as string;
-    const image = formData.get('gambar') as File | null;
+  const { data: session } = await supabaseClient()
+    .from('session_tokens')
+    .select('users(role)')
+    .eq('token', token)
+    .single();
 
-    const formValue = [name, description, price, category_id, image];
+  if (session?.users?.role !== 'manager') {
+    return NextResponse.json(
+      { message: 'Unauthorized', success: false },
+      { status: 401 },
+    );
+  }
 
-    if (
-      formValue.some(item => item === undefined || item === null || item === '')
-    ) {
-      return NextResponse.json(
-        { message: 'Ada field yang masih kosong', success: false },
-        { status: 400 },
-      );
-    }
+  const formData = await request.formData();
+  const name = formData.get('nama') as string;
+  const description = formData.get('dekripsi') as string;
+  const price = formData.get('harga') as string;
+  const category_id = formData.get('kategori_id') as string;
+  const image = formData.get('gambar') as File | null;
 
-    if (!image) {
-      return NextResponse.json(
-        { message: 'Gambar masih kosong', success: false },
-        { status: 400 },
-      );
-    }
+  const formValue = [name, description, price, category_id, image];
 
-    const imageName = `${Math.random()}-${name}`;
+  if (
+    formValue.some(item => item === undefined || item === null || item === '')
+  ) {
+    return NextResponse.json(
+      { message: 'Ada field yang masih kosong', success: false },
+      { status: 400 },
+    );
+  }
 
-    const { data: uploadData, error: uploadErr } = await supabaseClient()
-      .storage.from('menus')
-      .upload(imageName, image);
+  if (!image) {
+    return NextResponse.json(
+      { message: 'Gambar masih kosong', success: false },
+      { status: 400 },
+    );
+  }
 
-    if (uploadErr) {
-      return NextResponse.json(
-        { message: 'Gambar gagal di upload', success: false },
-        { status: 500 },
-      );
-    }
+  const imageName = `${Math.random()}-${name}`;
 
-    const { data: publicUrlData } = supabaseClient()
-      .storage.from('menus')
-      .getPublicUrl(uploadData.path);
+  const { data: uploadData, error: uploadErr } = await supabaseClient()
+    .storage.from('menus')
+    .upload(imageName, image);
 
-    const newMenu = {
-      name,
-      description,
-      price: Number(price),
-      category_id: Number(category_id),
-      image_url: publicUrlData.publicUrl,
-    };
+  if (uploadErr) {
+    return NextResponse.json(
+      { message: 'Gambar gagal di upload', success: false },
+      { status: 500 },
+    );
+  }
 
-    const { data, error } = await supabaseClient()
-      .from('menus')
-      .insert(newMenu)
-      .select()
-      .single();
+  const { data: publicUrlData } = supabaseClient()
+    .storage.from('menus')
+    .getPublicUrl(uploadData.path);
 
-    if (error) {
-      return NextResponse.json(
-        { message: 'Something went wrong', success: false },
-        { status: 500 },
-      );
-    }
+  const newMenu = {
+    name,
+    description,
+    price: Number(price),
+    category_id: Number(category_id),
+    image_url: publicUrlData.publicUrl,
+  };
 
-    return NextResponse.json({
-      message: 'Menu berhasil dibuat',
-      data,
-      success: true,
-    });
-  } catch (_err) {
+  const { data, error } = await supabaseClient()
+    .from('menus')
+    .insert(newMenu)
+    .select()
+    .single();
+
+  if (error) {
     return NextResponse.json(
       { message: 'Something went wrong', success: false },
       { status: 500 },
     );
   }
+
+  return NextResponse.json({
+    message: 'Menu berhasil dibuat',
+    data,
+    success: true,
+  });
 }
