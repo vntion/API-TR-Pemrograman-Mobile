@@ -1,3 +1,4 @@
+import { supabaseClient } from '@/utils/client';
 import { NextResponse } from 'next/server';
 
 /**
@@ -30,18 +31,22 @@ import { NextResponse } from 'next/server';
  *                       name:
  *                         type: string
  *                         example: John Doe
- *                       email:
+ *                       role:
  *                         type: string
- *                         example: john@example.com
+ *                         example: employee
  */
 export async function GET() {
   // Simulasi data dari database
-  const users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
-  ];
 
-  return NextResponse.json({ success: true, data: users });
+  const { data, error } = await supabaseClient()
+    .from('users')
+    .select('id, name, role');
+
+  if (error) {
+    return NextResponse.json({ success: true, data });
+  }
+
+  return NextResponse.json({ success: true, data });
 }
 
 /**
@@ -99,24 +104,24 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validasi input sederhana
     if (!body.name || !body.email) {
       return NextResponse.json(
         { success: false, message: 'Name and email are required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Simulasi respons insert database
     return NextResponse.json(
       { success: true, message: 'Pengguna berhasil dibuat' },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (_error) {
     return NextResponse.json(
       { success: false, message: 'Invalid request payload' },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
