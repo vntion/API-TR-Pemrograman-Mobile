@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
 
     if (transactionError) throw transactionError;
 
-    const detailsToInsert = details.map((detail: any) => ({
+    const detailsToInsert = details.map((detail: Record<string, unknown>) => ({
       transaction_id: transaction.id,
       menu_id: detail.menu_id,
       price: detail.price,
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, transaction });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
       data,
       success: true,
     });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json(
       { message: 'Something went wrong', success: false },
       { status: 500 },

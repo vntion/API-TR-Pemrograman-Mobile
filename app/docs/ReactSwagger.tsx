@@ -1,7 +1,7 @@
 'use client';
 
 import SwaggerUI from 'swagger-ui-react';
-// @ts-ignore
+// @ts-expect-error
 import 'swagger-ui-react/swagger-ui.css';
 
 type Props = {

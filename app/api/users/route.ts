@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       { success: true, message: 'Pengguna berhasil dibuat' },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, message: 'Invalid request payload' },
       { status: 400 }

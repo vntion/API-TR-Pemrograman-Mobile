@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       token: sessionToken,
       user: { id: user.id, name: user.name },
     });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json(
       { message: 'Something went wrong' },
       { status: 500 },
