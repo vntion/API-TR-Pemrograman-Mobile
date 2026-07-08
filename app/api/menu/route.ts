@@ -127,7 +127,6 @@ export async function GET(request: NextRequest) {
  *               - nama
  *               - dekripsi
  *               - harga
- *               - tersedia
  *               - kategori_id
  *             properties:
  *               nama:
@@ -139,9 +138,6 @@ export async function GET(request: NextRequest) {
  *               harga:
  *                 type: string
  *                 description: Menu item price.
- *               tersedia:
- *                 type: string
- *                 description: "Availability flag ('true'/'1' for available)."
  *               kategori_id:
  *                 type: string
  *                 description: Category ID for the menu item.
