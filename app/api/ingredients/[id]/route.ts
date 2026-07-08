@@ -233,9 +233,14 @@ export async function DELETE(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - nama
+ *               - unit
+ *               - stock
+ *               - gambar
  *             properties:
  *               nama:
  *                 type: string
@@ -245,14 +250,13 @@ export async function DELETE(
  *                 type: string
  *                 description: The new unit of measurement
  *                 example: kg
- *               stock:
+ *               stok:
  *                 type: number
  *                 description: The new stock quantity
  *                 example: 100
- *               image_url:
+ *               gambar:
  *                 type: string
- *                 description: The new image URL
- *                 example: https://example.com/image.jpg
+ *                 description: The new image URL or file
  *     responses:
  *       200:
  *         description: Ingredient updated successfully
@@ -342,14 +346,6 @@ export async function PUT(
     );
   }
 
-  const formData = await request.formData();
-  const nama = formData.get('nama') as string;
-  const unit = formData.get('unit') as string;
-  const stock = formData.get('stock') as string;
-  const file = formData.get('image') as File | string;
-
-  const hasImagePath = 
-
   const { data: checkIngredient } = await supabaseClient()
     .from('ingredients')
     .select('id')
@@ -358,20 +354,72 @@ export async function PUT(
 
   if (!checkIngredient) {
     return NextResponse.json(
-      { message: 'Bahan baku tidak ditemukan', success: false },
+      { message: 'Ingredient tidak ditemukan', success: false },
       { status: 404 },
     );
   }
 
-  const updateData: Record<string, string | number | boolean> = {};
-  if (nama !== undefined) updateData.name = nama;
-  if (unit !== undefined) updateData.unit = unit;
-  if (stock !== undefined) updateData.stock_quantity = stock;
-  if (image_url !== undefined) updateData.image_url = image_url;
+  const formData = await request.formData();
+  const name = formData.get('nama') as string;
+  const unit = formData.get('unit') as string;
+  const stock = formData.get('stok') as string;
+  const image = formData.get('gambar') as File | string | null;
+
+  const formValue = [name, unit, stock, image];
+
+  if (
+    formValue.some(item => item === undefined || item === null || item === '')
+  ) {
+    return NextResponse.json(
+      { message: 'Ada field yang masih kosong', success: false },
+      { status: 400 },
+    );
+  }
+
+  if (image === null) {
+    return NextResponse.json(
+      { message: 'File gambar masih kosong', success: false },
+      { status: 400 },
+    );
+  }
+
+  let imageUrl = '';
+
+  if (typeof image === 'string') {
+    imageUrl = image;
+  }
+
+  if (image instanceof File) {
+    const imageName = `${Math.random()}-${name}`;
+
+    const { data: uploadData, error: uploadErr } = await supabaseClient()
+      .storage.from('ingredients')
+      .upload(imageName, image, { upsert: true });
+
+    if (uploadErr) {
+      return NextResponse.json(
+        { message: 'Gambar gagal di upload', success: false },
+        { status: 500 },
+      );
+    }
+
+    const { data: publicUrlData } = supabaseClient()
+      .storage.from('ingredients')
+      .getPublicUrl(uploadData.path);
+
+    imageUrl = publicUrlData.publicUrl;
+  }
+
+  const updatedIngredient = {
+    name,
+    unit,
+    stock_quantity: Number(stock),
+    image_url: imageUrl,
+  };
 
   const { data, error } = await supabaseClient()
     .from('ingredients')
-    .update(updateData as any)
+    .update(updatedIngredient)
     .eq('id', id)
     .select()
     .single();
@@ -384,7 +432,7 @@ export async function PUT(
   }
 
   return NextResponse.json({
-    message: 'Bahan baku berhasil diperbarui',
+    message: 'Ingredient berhasil diperbarui',
     data,
     success: true,
   });

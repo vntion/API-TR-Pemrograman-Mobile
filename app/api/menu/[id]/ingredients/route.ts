@@ -130,7 +130,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   type: boolean
  *                   example: false
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -167,7 +170,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
     return NextResponse.json(
-      { message: 'Daftar bahan baku tidak boleh kosong', success: false },
+      { message: 'Ingredients tidak boleh kosong', success: false },
       { status: 400 },
     );
   }
@@ -179,11 +182,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .eq('menu_id', Number(id));
 
   // Insert new ingredients
-  const newIngredients = ingredients.map((item: { ingredient_id: number; quantity_needed: number }) => ({
-    menu_id: Number(id),
-    ingredient_id: item.ingredient_id,
-    quantity_needed: item.quantity_needed,
-  }));
+  const newIngredients = ingredients.map(
+    (item: { ingredient_id: number; quantity_needed: number }) => ({
+      menu_id: Number(id),
+      ingredient_id: item.ingredient_id,
+      quantity_needed: item.quantity_needed,
+    }),
+  );
 
   const { data, error } = await supabaseClient()
     .from('menu_ingredients')
@@ -192,7 +197,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (error) {
     return NextResponse.json(
-      { message: 'Gagal menyimpan resep', error: error.message, success: false },
+      {
+        message: 'Gagal menyimpan resep',
+        error: error.message,
+        success: false,
+      },
       { status: 500 },
     );
   }

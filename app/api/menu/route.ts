@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
  *               - dekripsi
  *               - harga
  *               - kategori_id
+ *               - gambar
  *             properties:
  *               nama:
  *                 type: string
@@ -141,10 +142,10 @@ export async function GET(request: NextRequest) {
  *               kategori_id:
  *                 type: string
  *                 description: Category ID for the menu item.
- *               image:
+ *               gambar:
  *                 type: string
  *                 format: binary
- *                 description: Optional image file for the menu item.
+ *                 description: Image file for the menu item.
  *     responses:
  *       200:
  *         description: Menu item created successfully.
@@ -220,16 +221,16 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const nama = formData.get('nama') as string;
+    const name = formData.get('nama') as string;
     const description = formData.get('dekripsi') as string;
     const price = formData.get('harga') as string;
     const category_id = formData.get('kategori_id') as string;
-    const image = formData.get('image') as File | null;
+    const image = formData.get('gambar') as File | null;
 
-    const bodyValue = [nama, description, price, category_id, image];
+    const formValue = [name, description, price, category_id, image];
 
     if (
-      bodyValue.some(item => item === undefined || item === null || item === '')
+      formValue.some(item => item === undefined || item === null || item === '')
     ) {
       return NextResponse.json(
         { message: 'Ada field yang masih kosong', success: false },
@@ -244,7 +245,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const imageName = `${Math.random()}-${nama}`;
+    const imageName = `${Math.random()}-${name}`;
 
     const { data: uploadData, error: uploadErr } = await supabaseClient()
       .storage.from('menus')
@@ -262,7 +263,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(uploadData.path);
 
     const newMenu = {
-      name: nama,
+      name,
       description,
       price: Number(price),
       category_id: Number(category_id),

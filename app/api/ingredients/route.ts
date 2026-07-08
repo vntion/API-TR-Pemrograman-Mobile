@@ -1,8 +1,6 @@
 import { supabaseClient } from '@/utils/client';
 import { NextRequest, NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-
 /**
  * @swagger
  * /api/ingredients:
@@ -125,8 +123,8 @@ export async function GET(request: NextRequest) {
  *             required:
  *               - nama
  *               - unit
- *               - stock
- *               - image
+ *               - stok
+ *               - gambar
  *             properties:
  *               nama:
  *                 type: string
@@ -136,11 +134,11 @@ export async function GET(request: NextRequest) {
  *                 type: string
  *                 description: The unit of measurement
  *                 example: kg
- *               stock:
+ *               stok:
  *                 type: string
  *                 description: The stock quantity
  *                 example: "50"
- *               image:
+ *               gambar:
  *                 type: string
  *                 format: binary
  *                 description: The ingredient image file
@@ -230,15 +228,15 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    const nama = formData.get('nama') as string;
+    const name = formData.get('nama') as string;
     const unit = formData.get('unit') as string;
-    const stock = formData.get('stock') as string;
-    const image = formData.get('image') as File | null;
+    const stock = formData.get('stok') as string;
+    const image = formData.get('gambar') as File | null;
 
-    const bodyValue = [nama, unit, stock, image];
+    const formValue = [name, unit, stock, image];
 
     if (
-      bodyValue.some(item => item === undefined || item === null || item === '')
+      formValue.some(item => item === undefined || item === null || item === '')
     ) {
       return NextResponse.json(
         { message: 'Ada field yang masih kosong', success: false },
@@ -253,7 +251,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const imageName = `${Math.random()}-${nama}`;
+    const imageName = `${Math.random()}-${name}`;
 
     const { data: uploadData, error: uploadErr } = await supabaseClient()
       .storage.from('ingredients')
@@ -271,7 +269,7 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(uploadData.path);
 
     const newIngredient = {
-      name: nama,
+      name,
       unit,
       stock_quantity: Number(stock),
       image_url: publicUrlData.publicUrl,

@@ -85,7 +85,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   type: boolean
  *                   example: false
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const id = Number(params.id);
 
   const { data: menu, error: menuErr } = await supabaseClient()
@@ -179,7 +182,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  *                   type: boolean
  *                   example: false
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -235,35 +241,31 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - nama
- *               - dekripsi
+ *               - deskripsi
  *               - harga
- *               - tersedia
  *               - kategori_id
- *               - image
+ *               - gambar
  *             properties:
  *               nama:
  *                 type: string
  *                 description: Menu item name.
- *               dekripsi:
+ *               deskripsi:
  *                 type: string
  *                 description: Menu item description.
  *               harga:
  *                 type: number
  *                 description: Menu item price.
- *               tersedia:
- *                 type: boolean
- *                 description: Availability status.
  *               kategori_id:
  *                 type: integer
  *                 description: Category ID.
- *               image:
+ *               gambar:
  *                 type: string
- *                 description: Image URL for the menu item.
+ *                 description: Image URL or file for the menu item.
  *     responses:
  *       200:
  *         description: Menu item updated successfully.
@@ -333,23 +335,14 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  *                   type: boolean
  *                   example: false
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
-  const body = await request.json();
   const id = Number(params.id);
 
   const token = authHeader!.split(' ')[1];
-
-  const { nama, dekripsi, harga, tersedia, kategori_id, image } = body;
-
-  const bodyValue = [nama, dekripsi, harga, tersedia, kategori_id, image];
-
-  if (bodyValue.some(item => !item)) {
-    return NextResponse.json(
-      { message: 'Ada field yang masih kosong', success: false },
-      { status: 400 },
-    );
-  }
 
   const { data: session } = await supabaseClient()
     .from('session_tokens')
@@ -377,16 +370,72 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     );
   }
 
+  const formData = await request.formData();
+  const name = formData.get('nama') as string;
+  const description = formData.get('deskripsi') as string;
+  const price = formData.get('harga') as string;
+  const category_id = formData.get('kategori_id') as string;
+  const image = formData.get('gambar') as File | string | null;
+
+  const formValue = [name, description, price, category_id, image];
+
+  if (
+    formValue.some(item => item === undefined || item === null || item === '')
+  ) {
+    return NextResponse.json(
+      { message: 'Ada field yang masih kosong', success: false },
+      { status: 400 },
+    );
+  }
+
+  if (image === null) {
+    return NextResponse.json(
+      { message: 'Gambar masih kosong', success: false },
+      { status: 400 },
+    );
+  }
+
+  let imageUrl = '';
+
+  if (typeof image === 'string') {
+    imageUrl = image;
+  }
+
+  if (image instanceof File) {
+    const imageName = `${Math.random()}-${name}`;
+
+    const { data: uploadData, error: uploadErr } = await supabaseClient()
+      .storage.from('menus')
+      .upload(imageName, image, { upsert: true });
+
+    if (uploadErr) {
+      return NextResponse.json(
+        { message: 'Gambar gagal di upload', success: false },
+        { status: 500 },
+      );
+    }
+
+    const { data: publicUrlData } = supabaseClient()
+      .storage.from('menus')
+      .getPublicUrl(uploadData.path);
+
+    imageUrl = publicUrlData.publicUrl;
+  }
+
+  const updatedMenu = {
+    name,
+    description,
+    price: Number(price),
+    category_id: Number(category_id),
+    image_url: imageUrl,
+  };
+
   const { data, error } = await supabaseClient()
     .from('menus')
-    .update({
-      name: nama,
-      description: dekripsi,
-      price: harga,
-      is_available: tersedia,
-      category_id: kategori_id,
-    })
-    .eq('id', id);
+    .update(updatedMenu)
+    .eq('id', id)
+    .select()
+    .single();
 
   if (error) {
     return NextResponse.json(
