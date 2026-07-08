@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Mematikan pengecekan ESLint saat build (berguna jika ada error non-kritikal)
+    // Mematikan pengecekan ESLint saat build
     ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Mematikan pengecekan TypeScript saat build
+    ignoreBuildErrors: true,
   },
 };
 

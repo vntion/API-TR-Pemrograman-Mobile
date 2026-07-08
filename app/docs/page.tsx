@@ -31,7 +31,7 @@ export default async function ApiDocsPage() {
         </p>
       </div>
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-        <ReactSwagger spec={spec} />
+        <ReactSwagger spec={spec as Record<string, unknown>} />
       </div>
     </section>
   );

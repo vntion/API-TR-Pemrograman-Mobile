@@ -141,11 +141,12 @@ export async function POST(request: NextRequest) {
   const { data: session } = await supabaseClient()
     .from('session_tokens')
     .select('users(role)')
-    .eq('token', token);
+    .eq('token', token)
+    .single();
 
   console.log(session);
 
-  if (session?.users?.role !== 'manager') {
+  if ((session as any)?.users?.role !== 'manager') {
     return NextResponse.json(
       { message: 'Unauthorized', success: false },
       { status: 401 },

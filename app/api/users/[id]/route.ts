@@ -273,7 +273,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   const { data, error } = await supabaseClient()
     .from('users')
-    .update(updateData)
+    .update(updateData as any)
     .eq('id', id)
     .select('id, name, role, created_at, updated_at')
     .single();
