@@ -146,8 +146,7 @@ export async function POST(request: NextRequest) {
     await supabaseClient()
       .from('session_tokens')
       .delete()
-      .eq('used_id', user.id)
-      .lt('expires_at', new Date().toISOString());
+      .eq('used_id', user.id);
 
     const { error: sessionErr } = await supabaseClient()
       .from('session_tokens')
