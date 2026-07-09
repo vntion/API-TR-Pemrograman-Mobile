@@ -417,6 +417,13 @@ export async function PUT(
     );
   }
 
+  // if (typeof image !== 'string' && !image.type.startsWith('image/')) {
+  //   return NextResponse.json(
+  //     { message: 'File harus berupa gambar', success: false },
+  //     { status: 400 },
+  //   );
+  // }
+
   let imageUrl = '';
 
   if (typeof image === 'string') {

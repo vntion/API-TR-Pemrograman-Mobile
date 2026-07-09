@@ -264,6 +264,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!image.type.startsWith('image/')) {
+      return NextResponse.json(
+        { message: 'File harus berupa gambar', success: false },
+        { status: 400 },
+      );
+    }
+
     const imageName = `${Math.random()}-${name}`;
 
     const { data: uploadData, error: uploadErr } = await supabaseClient()
