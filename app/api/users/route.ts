@@ -55,9 +55,11 @@ export async function GET() {
  * /api/users:
  *   post:
  *     summary: Menambahkan pengguna baru
- *     description: Endpoint ini digunakan untuk membuat pengguna baru.
+ *     description: Endpoint ini digunakan untuk membuat pengguna baru. Hanya manager yang dapat membuat pengguna.
  *     tags:
  *       - Users
+ *     security:
+ *       - BearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -65,15 +67,20 @@ export async function GET() {
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - email
+ *               - nama
+ *               - password
+ *               - role
  *             properties:
- *               name:
+ *               nama:
  *                 type: string
  *                 example: New User
- *               email:
+ *               password:
  *                 type: string
- *                 example: newuser@example.com
+ *                 example: rahasia123
+ *               role:
+ *                 type: string
+ *                 description: Role pengguna ('manager' atau 'karyawan')
+ *                 example: karyawan
  *     responses:
  *       201:
  *         description: Berhasil menambahkan pengguna
@@ -88,8 +95,20 @@ export async function GET() {
  *                 message:
  *                   type: string
  *                   example: Pengguna berhasil dibuat
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: New User
+ *                     role:
+ *                       type: string
+ *                       example: karyawan
  *       400:
- *         description: Bad Request, parameter tidak lengkap
+ *         description: Bad Request, parameter tidak lengkap atau role tidak valid
  *         content:
  *           application/json:
  *             schema:
@@ -100,7 +119,36 @@ export async function GET() {
  *                   example: false
  *                 message:
  *                   type: string
- *                   example: Name and email are required
+ *                   example: Field masih ada yang kosong
+ *       401:
+ *         description: Unauthorized, token tidak valid atau pengguna bukan manager
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Unauthorized
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Pengguna gagal dibuat
+ *                 error:
+ *                   type: string
+ *                   example: error_message
  */
 export async function POST(request: Request) {
   const authHeader = request.headers.get('authorization');
