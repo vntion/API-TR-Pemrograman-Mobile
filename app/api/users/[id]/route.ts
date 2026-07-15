@@ -36,7 +36,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *                       type: string
  *                     role:
  *                       type: string
- *                       enum: [employee, manager]
+ *                       enum: [karyawan, manager]
  *                     created_at:
  *                       type: string
  *                       format: date-time
@@ -73,7 +73,10 @@ import { NextRequest, NextResponse } from 'next/server';
  *                   type: boolean
  *                   example: false
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const id = Number(params.id);
 
   const { data: user, error } = await supabaseClient()
@@ -136,9 +139,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  *                 example: newpassword123
  *               role:
  *                 type: string
- *                 enum: [employee, manager]
+ *                 enum: [karyawan, manager]
  *                 description: New role for the user
- *                 example: employee
+ *                 example: karyawan
  *     responses:
  *       200:
  *         description: User updated successfully
@@ -177,7 +180,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Role hanya employee atau manager
+ *                   example: Role hanya karyawan atau manager
  *                 success:
  *                   type: boolean
  *                   example: false
@@ -221,7 +224,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  *                   type: boolean
  *                   example: false
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -257,10 +263,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
   if (body.nama !== undefined) updateData.name = body.nama;
   if (body.role !== undefined) {
-    const ENUM_ROLES = ['employee', 'manager'];
+    const ENUM_ROLES = ['karyawan', 'manager'];
     if (!ENUM_ROLES.includes(body.role.trim().toLowerCase())) {
       return NextResponse.json(
-        { message: 'Role hanya employee atau manager', success: false },
+        { message: 'Role hanya karyawan atau manager', success: false },
         { status: 400 },
       );
     }
@@ -363,7 +369,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
  *                   type: boolean
  *                   example: false
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader!.split(' ')[1];
   const id = Number(params.id);
@@ -394,10 +403,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     );
   }
 
-  const { error } = await supabaseClient()
-    .from('users')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabaseClient().from('users').delete().eq('id', id);
 
   if (error) {
     return NextResponse.json(
