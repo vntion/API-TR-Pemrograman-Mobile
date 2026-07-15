@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
   let query = supabaseClient()
     .from('users')
     .select('id, name, role, created_at, updated_at')
+    .is('deleted_at', null)
     .neq('role', 'manager');
 
   if (search) {
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
 
   // Check active status based on today's attendance
   const today = new Date().toISOString().split('T')[0];
-  const employeeIds = employees.map((e) => e.id);
+  const employeeIds = employees.map(e => e.id);
 
   const { data: todayAttendances } = await supabaseClient()
     .from('attendances')
@@ -142,9 +143,9 @@ export async function GET(request: NextRequest) {
     .eq('attendance_date', today)
     .in('user_id', employeeIds);
 
-  const activeUserIds = new Set(todayAttendances?.map((a) => a.user_id) || []);
+  const activeUserIds = new Set(todayAttendances?.map(a => a.user_id) || []);
 
-  const employeesWithStatus = employees.map((emp) => ({
+  const employeesWithStatus = employees.map(emp => ({
     ...emp,
     is_active: activeUserIds.has(emp.id),
     status_label: activeUserIds.has(emp.id) ? 'Aktif' : 'Tidak Aktif',
@@ -152,9 +153,9 @@ export async function GET(request: NextRequest) {
 
   let filteredEmployees = employeesWithStatus;
   if (status === 'active') {
-    filteredEmployees = employeesWithStatus.filter((e) => e.is_active);
+    filteredEmployees = employeesWithStatus.filter(e => e.is_active);
   } else if (status === 'inactive') {
-    filteredEmployees = employeesWithStatus.filter((e) => !e.is_active);
+    filteredEmployees = employeesWithStatus.filter(e => !e.is_active);
   }
 
   return NextResponse.json({

@@ -83,6 +83,7 @@ export async function GET(
     .from('users')
     .select('id, name, role, created_at, updated_at')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
 
   if (!user) {
@@ -368,6 +369,9 @@ export async function PUT(
  *                 success:
  *                   type: boolean
  *                   example: false
+ *                 error:
+ *                   type: object
+ *                   description: Error details
  */
 export async function DELETE(
   request: NextRequest,
@@ -403,11 +407,14 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabaseClient().from('users').delete().eq('id', id);
+  const { error } = await supabaseClient()
+    .from('users')
+    .update({ deleted_at: new Date() })
+    .eq('id', id);
 
   if (error) {
     return NextResponse.json(
-      { message: 'Something went wrong', success: false },
+      { message: 'Something went wrong', success: false, error },
       { status: 500 },
     );
   }

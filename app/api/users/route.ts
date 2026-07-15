@@ -34,14 +34,15 @@ import { NextResponse } from 'next/server';
  *                         example: John Doe
  *                       role:
  *                         type: string
- *                         example: employee
+ *                         example: karyawan
  */
 export async function GET() {
   // Simulasi data dari database
 
   const { data, error } = await supabaseClient()
     .from('users')
-    .select('id, name, role');
+    .select('id, name, role')
+    .is('deleted_at', null);
 
   if (error) {
     return NextResponse.json({ success: true, data });
