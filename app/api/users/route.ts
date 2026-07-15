@@ -1,4 +1,5 @@
 import { supabaseClient } from '@/utils/client';
+import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 
 /**
@@ -102,26 +103,66 @@ export async function GET() {
  *                   example: Name and email are required
  */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader!.split(' ')[1];
 
-    // Validasi input sederhana
-    if (!body.name || !body.email) {
-      return NextResponse.json(
-        { success: false, message: 'Name and email are required' },
-        { status: 400 },
-      );
-    }
+  const body = await request.json();
 
-    // Simulasi respons insert database
+  const { data: session } = await supabaseClient()
+    .from('session_tokens')
+    .select('users(role)')
+    .eq('token', token)
+    .single();
+
+  if (session?.users?.role !== 'manager') {
     return NextResponse.json(
-      { success: true, message: 'Pengguna berhasil dibuat' },
-      { status: 201 },
+      { message: 'Unauthorized', success: false },
+      { status: 401 },
     );
-  } catch (_error) {
+  }
+
+  const name = body.nama as string;
+  const password = body.password as string;
+  const role = body.role as string;
+
+  if (!name || !password || !role) {
     return NextResponse.json(
-      { success: false, message: 'Invalid request payload' },
+      { success: false, message: 'Field masih ada yang kosong' },
       { status: 400 },
     );
   }
+
+  const ROLE_ENUM = ['manager', 'karyawan'];
+
+  if (!ROLE_ENUM.includes(role.toLowerCase().trim())) {
+    return NextResponse.json(
+      { success: false, message: 'Role hanya manager atau karyawan' },
+      { status: 400 },
+    );
+  }
+
+  const salt = 10;
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  const { data: newUser, error: userErr } = await supabaseClient()
+    .from('users')
+    .insert({ name, password: hashedPassword, role })
+    .select()
+    .single();
+
+  if (userErr) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Pengguna gagal dibuat',
+        error: userErr.message,
+      },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(
+    { success: true, message: 'Pengguna berhasil dibuat', data: newUser },
+    { status: 201 },
+  );
 }
